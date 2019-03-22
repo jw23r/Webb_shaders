@@ -6,6 +6,7 @@
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
+			_Noise("Noise", 2D) = "white" {}
     }
     SubShader
     {
@@ -15,12 +16,12 @@
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf Standard fullforwardshadows
-
+#pragma vertex vert
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
 
         sampler2D _MainTex;
-
+	sampler2D _Noise;
         struct Input
         {
             float2 uv_MainTex;
@@ -36,7 +37,16 @@
         UNITY_INSTANCING_BUFFER_START(Props)
             // put more per-instance properties here
         UNITY_INSTANCING_BUFFER_END(Props)
+			void vert(inout appdata_full IN) {
+			float4 pos = mul(unity_ObjectToWorld, IN.vertex);
+			//float2 pos = IN.vertex.xz / 10;
+			pos.x += _Time.y;
 
+
+			fixed4 col = tex2Dlod(_Noise, float4(pos.xz, 0, 0)) - .5;
+			float3 offset = lerp( float3(0, 0, 0),col.rbg, IN.color.r);
+			IN.vertex.xyz += col.rbg;
+		}
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
